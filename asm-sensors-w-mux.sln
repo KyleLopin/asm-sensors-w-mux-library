@@ -5,8 +5,6 @@ VisualStudioVersion = 17.2.32616.157
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "asm_qwiic_mux", "..\..\..\Documents\Arduino\asm_qwiic_mux\asm_qwiic_mux.vcxproj", "{C5F80730-F44F-4478-BDAE-6634EFC2CA88}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "check_i2c", "..\..\..\Documents\Arduino\check_i2c\check_i2c.vcxproj", "{1F0D0C88-EB0A-4EB3-9AA6-415E376354C0}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
