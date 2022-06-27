@@ -34,6 +34,7 @@
 
 // Define statements
 // I2C info
+#define MUX_ADDR	0x70
 #define AS726X_ADDR 0x49
 #define BUTTON_ADDR 0x6F
 #define AS7262_CODE 0x3E
@@ -51,17 +52,17 @@ class SpectroDesktop
 public:
 
 	SpectroDesktop();
-	QWIICMUX myMux;  // Qwiic mux if it is present
+	QWIICMUX myMux();  // Qwiic mux if it is present
 	QwiicButton button;  // this will represent EVERY button ;) so its not an array
 	AS726X as726x;  // treat all as726x the same
 	AS7265X as7265x;  // treat all as7265x the same
-	boolean begin();
+	bool begin(TwoWire& wirePort);
 
 private:
-	boolean use_mux = false;  // flag if there is a mux or not
+	bool use_mux = false;  // flag if there is a mux or not
 	byte sensor_type[8];
 	void get_sensor_info();
-	boolean check_channel();
+	bool check_channel();
 	byte get_sensor_type(int channel);
 };
 

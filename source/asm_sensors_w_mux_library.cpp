@@ -10,13 +10,16 @@ SpectroDesktop::SpectroDesktop()
 // 1) checking for the qwiic mux
 // 2) look for any and all as7262/as7263/as7265x sensor over qwiic
 // Returns false if no sensor
-boolean SpectroDesktop::begin() {
-    QWIICMUX myMux;
+bool SpectroDesktop::begin(TwoWire &wirePort) {
     button.begin();  // use this to represent every button
 
-    use_mux = myMux.begin();  // set boolean if the device has a i2c mux or not
+    use_mux = myMux.begin(MUX_ADDR);  // set boolean if the device has a i2c mux or not
     // begin turns all ports off
-    Serial.println("Has a mux");
+    if (use_mux) {
+        Serial.println("Has a mux");
+    }
+    Serial.print("Use mux ");
+    Serial.println(myMux.isConnected());
     //    for (int i=0; i <= 7; i++) {
     //      myMux.enablePort(i);
     //      if (button.isConnected()) {
