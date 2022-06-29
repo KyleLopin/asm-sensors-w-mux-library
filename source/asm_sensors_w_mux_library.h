@@ -57,11 +57,14 @@ private:
 	TwoWire* _i2cPort;
 	bool use_mux = false;  // flag if there is a mux or not
 	byte sensor_type[8];
-	void get_sensor_info();
+	bool get_sensor_info();
 	bool check_channel();
-	byte get_sensor_type(int channel);
+	byte get_sensor_type(byte channel);
 	bool enableMuxPort(byte portNumber);
+	bool disableMux();
+
 	bool disableMuxPort(byte portNumber);
+	bool sendMuxSettings(byte _settings);
 	bool check_i2c_addr(byte _addr);
 };
 
