@@ -28,7 +28,6 @@
 // Dependent Libraries
 #include <AS726X.h>  // http://librarymanager/All#Sparkfun_AS726X
 #include <SparkFun_AS7265X.h>  // http://librarymanager/All#Sparkfun_AS7265X
-#include <SparkFun_I2C_Mux_Arduino_Library.h>  // http://librarymanager/All#Sparkfun_I2C_Mux
 #include <SparkFun_Qwiic_Button.h>  // http://librarymanager/All#Sparkfun_Qwiic_Button_Switch
 #include <Wire.h>
 
@@ -42,28 +41,28 @@
 #define AS7265X_CODE 0x41
 
 // Enums and constants
-enum SENSOR : byte
-{
+enum SENSOR : byte {
 	NO_SENSOR, AS7262_SENSOR, AS7263_SENSOR, AS7265X_SENSOR
 };
 
-class SpectroDesktop
-{
+class SpectroDesktop {
 public:
-
 	SpectroDesktop();
-	QWIICMUX myMux();  // Qwiic mux if it is present
 	QwiicButton button;  // this will represent EVERY button ;) so its not an array
 	AS726X as726x;  // treat all as726x the same
 	AS7265X as7265x;  // treat all as7265x the same
-	bool begin(TwoWire& wirePort);
+	bool begin(TwoWire &wirePort = Wire);
 
 private:
+	TwoWire* _i2cPort;
 	bool use_mux = false;  // flag if there is a mux or not
 	byte sensor_type[8];
 	void get_sensor_info();
 	bool check_channel();
 	byte get_sensor_type(int channel);
+	bool enableMuxPort(byte portNumber);
+	bool disableMuxPort(byte portNumber);
+	bool check_i2c_addr(byte _addr);
 };
 
 #endif
