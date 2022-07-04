@@ -15,12 +15,8 @@ bool SpectroDesktop::begin(TwoWire &wirePort) {
 
     button.begin();  // use this to represent every button
     Serial.println("Checking for a mux");
+    delay(100);
     use_mux = check_i2c_addr(MUX_ADDR);  // set boolean if the device has a i2c mux or not
-    // begin turns all ports off
-    if (use_mux) {
-        //disableMux();  // turn off all the mux channels
-        Serial.println("Has a mux");
-    }
     bool has_sensor = get_sensor_info();
     return (has_sensor);
 }
@@ -30,8 +26,12 @@ bool SpectroDesktop::get_sensor_info() {
     if (use_mux) {
         Serial.println("Have mux");
         for (byte i = 0; i <= 7; i++) {
+            delay(300);
             enableMuxPort(i);
-            int avail = check_channel();
+            //sensor_type[i] = get_sensor_type(i);
+            //check_i2c_addr(0x49);
+
+            int avail = check_i2c_addr(AS726X_ADDR);
             Serial.print("Port: "); Serial.print(i);
             Serial.print(" available: "); Serial.println(avail);
             if (avail) {
@@ -39,13 +39,13 @@ bool SpectroDesktop::get_sensor_info() {
                 sensor_type[i] = get_sensor_type(i);
                 found_device = true;
             }
-            disableMux();
+            //disableMux();
             //disableMuxPort(i);
         }
     }
     else {
         Serial.println("No mux");
-        int avail = check_channel();
+        int avail = check_i2c_addr(AS726X_ADDR);
         if (avail) {
             sensor_type[0] = get_sensor_type(0);  // just put in a place holder for the channel
             found_device = true;
@@ -55,26 +55,17 @@ bool SpectroDesktop::get_sensor_info() {
     return found_device;
 }
 
-boolean SpectroDesktop::check_channel() {
-    boolean available_channel = false;
-    _i2cPort->requestFrom(AS726X_ADDR, 1);
-    available_channel = _i2cPort->available();
-    return available_channel;
-}
-
 byte SpectroDesktop::get_sensor_type(byte channel) {
     byte _sensor_type = NO_SENSOR;
-    bool sensor_begins = as726x.begin(*_i2cPort);
+    //bool sensor_begins = as726x.begin(*_i2cPort);
+    bool sensor_begins = as726x.begin();
     Serial.print("sensor begins: "); Serial.println(sensor_begins);
     if (sensor_begins == true) {
-        Serial.println("Check 0a");
         as726x.setIntegrationTime(150);
         as726x.setBulbCurrent(0b11);
     }
-    Serial.println("Check1");
     uint8_t hw_type = as726x.getVersion();
-    Serial.print("Hardware type: 0x");
-    Serial.println(hw_type, HEX);
+    Serial.print("Hardware type: 0x"); Serial.println(hw_type, HEX);
 
     if (hw_type == AS7262_CODE) {
         _sensor_type = AS7262_SENSOR;
@@ -116,6 +107,28 @@ bool SpectroDesktop::enableMuxPort(byte portNumber) {
         Serial.println("enableMuxPort: port Number has to be 7 or less");
         return false;
     }
+    byte settings = (1 << portNumber);
+    _i2cPort->beginTransmission(MUX_ADDR);
+    _i2cPort->write(settings);
+    byte end_transmission = _i2cPort->endTransmission();
+    //if (end_transmission != 0) {
+    //Serial.print("End transmission (enable): "); Serial.println(end_transmission);
+    //    //return false;  // Device is not responding correctly
+    //}
+    byte current_settings = getMuxSettings();
+    if (current_settings == settings) {
+        Serial.println("Mux set correctly");
+        return true;
+    }
+    return false;  // if _settings != settings
+}
+
+bool SpectroDesktop::enableMuxPort_depr(byte portNumber) {
+    Serial.print("enabling port depr: "); Serial.println(portNumber);
+    if (portNumber > 8) {  // Check for a correct port number
+        Serial.println("enableMuxPort: port Number has to be 7 or less");
+        return false;
+    }
     // Make sure the mux is not trying to send information before changing
     _i2cPort->requestFrom(MUX_ADDR, 1);
     byte avail_bytes = _i2cPort->available();
@@ -129,6 +142,7 @@ bool SpectroDesktop::enableMuxPort(byte portNumber) {
     Serial.print("mux settings: "); Serial.println(settings);
     // Set the bit in the settings to enable the port
     settings |= (1 << portNumber);
+    settings = (1 << portNumber);
     // Write new settings to mux
     _i2cPort->beginTransmission(MUX_ADDR);
     _i2cPort->write(settings);
@@ -140,69 +154,35 @@ bool SpectroDesktop::enableMuxPort(byte portNumber) {
     return true;
 }
 
-bool SpectroDesktop::disableMux() {
-    Serial.println("disabling mux");
-    _i2cPort->requestFrom(MUX_ADDR, 1);
-    if (!_i2cPort->available()) {
-        Serial.println("i2c from mux not available, disable");
-        return false;
-    }
-    byte settings = _i2cPort->read();
-    Serial.print("mux settings: "); Serial.println(settings);
-    sendMuxSettings(0);
-}
-
-bool SpectroDesktop::disableMuxPort(byte portNumber)
-{
-    if (portNumber > 7) portNumber = 7;
-
-    //Read the current mux settings
-    _i2cPort->requestFrom(MUX_ADDR, 1);
-    if (!_i2cPort->available()) return(false); //Error
-    byte settings = _i2cPort->read();
-    Serial.print("mux settings diablemuxport: "); Serial.println(settings);
-    //Clear the wanted bit to disable the port
-    settings &= ~(1 << portNumber);
-    Serial.print("mux settings diablemuxport2: "); Serial.println(settings);
-    _i2cPort->beginTransmission(MUX_ADDR);
-    //_i2cPort->write(settings);
-    _i2cPort->write(0);
-    _i2cPort->endTransmission();
-
-    return(true);
-}
-
-bool SpectroDesktop::sendMuxSettings(byte _settings) {
+byte SpectroDesktop::getMuxSettings() {
     // Make sure the mux is not trying to send information before changing
     _i2cPort->requestFrom(MUX_ADDR, 1);
     if (!_i2cPort->available()) {
-        return false;
+        Serial.println("Mux not sending settings");
+        return 254;
     }
     // get current settings
     byte settings = _i2cPort->read();
-    Serial.print("mux settings pre: "); Serial.println(settings);
+    //Serial.print("mux settings (get): "); Serial.println(settings);
+    return settings;
+}
 
-    Serial.println("check00");
+bool SpectroDesktop::sendMuxSettings(byte _settings) {
     // Write new settings to mux
     _i2cPort->beginTransmission(MUX_ADDR);
     _i2cPort->write(_settings);
-    
     byte end_trans = _i2cPort->endTransmission();
-    Serial.println("check01");
-    //Serial.print("Send mux settings end trans: "); 
-    Serial.println(end_trans);
+    //Serial.print("Send mux settings end trans: "); Serial.println(end_trans);
     if (end_trans != 0) {
-        Serial.println("check02");
         return false;  // Device is not responding correctly
     }
-    Serial.println("check03");
     return true;
 }
 
 bool SpectroDesktop::check_i2c_addr(byte _addr) {
     _i2cPort->beginTransmission(_addr);
     byte end_trans = _i2cPort->endTransmission();
-    Serial.print("End transmion code: "); Serial.println(end_trans);
+    // Serial.print("End transmion code (check i2c): "); Serial.println(end_trans);
     if (end_trans == 0) {
         return true;
     }
