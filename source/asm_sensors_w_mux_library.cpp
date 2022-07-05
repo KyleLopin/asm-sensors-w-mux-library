@@ -1,6 +1,8 @@
 #include "asm_sensors_w_mux_library.h"
 #include "Arduino.h"
 
+#define DEBUG_FLAG (0)
+
 //Constructor
 SpectroDesktop::SpectroDesktop()
 {
@@ -14,7 +16,9 @@ bool SpectroDesktop::begin(TwoWire &wirePort) {
     _i2cPort = &wirePort;
 
     button.begin();  // use this to represent every button
-    Serial.println("Checking for a mux");
+    #if(DEBUG_FLAG)
+        Serial.println("Checking for a mux");
+    #endif
     delay(100);
     use_mux = check_i2c_addr(MUX_ADDR);  // set boolean if the device has a i2c mux or not
     bool has_sensor = get_sensor_info();
@@ -26,7 +30,6 @@ bool SpectroDesktop::get_sensor_info() {
     if (use_mux) {
         Serial.println("Have mux");
         for (byte i = 0; i <= 7; i++) {
-            delay(300);
             enableMuxPort(i);
             //sensor_type[i] = get_sensor_type(i);
             //check_i2c_addr(0x49);
@@ -35,7 +38,6 @@ bool SpectroDesktop::get_sensor_info() {
             Serial.print("Port: "); Serial.print(i);
             Serial.print(" available: "); Serial.println(avail);
             if (avail) {
-                Serial.println("Get sensor type");
                 sensor_type[i] = get_sensor_type(i);
                 found_device = true;
             }
@@ -102,7 +104,7 @@ byte SpectroDesktop::get_sensor_type(byte channel) {
 }
 
 bool SpectroDesktop::enableMuxPort(byte portNumber) {
-    Serial.print("enabling port: "); Serial.println(portNumber);
+    //Serial.print("enabling port1: "); Serial.println(portNumber);
     if (portNumber > 8) {  // Check for a correct port number
         Serial.println("enableMuxPort: port Number has to be 7 or less");
         return false;
@@ -112,7 +114,9 @@ bool SpectroDesktop::enableMuxPort(byte portNumber) {
     _i2cPort->write(settings);
     byte end_transmission = _i2cPort->endTransmission();
     //if (end_transmission != 0) {
-    //Serial.print("End transmission (enable): "); Serial.println(end_transmission);
+    #if(DEBUG_FLAG)
+        Serial.print("End transmission (enable): "); Serial.println(end_transmission);
+    #endif
     //    //return false;  // Device is not responding correctly
     //}
     byte current_settings = getMuxSettings();
@@ -172,7 +176,9 @@ bool SpectroDesktop::sendMuxSettings(byte _settings) {
     _i2cPort->beginTransmission(MUX_ADDR);
     _i2cPort->write(_settings);
     byte end_trans = _i2cPort->endTransmission();
-    //Serial.print("Send mux settings end trans: "); Serial.println(end_trans);
+    #if(DEBUG_FLAG)
+        Serial.print("Send mux settings end trans: "); Serial.println(end_trans);
+    #endif
     if (end_trans != 0) {
         return false;  // Device is not responding correctly
     }
@@ -182,9 +188,18 @@ bool SpectroDesktop::sendMuxSettings(byte _settings) {
 bool SpectroDesktop::check_i2c_addr(byte _addr) {
     _i2cPort->beginTransmission(_addr);
     byte end_trans = _i2cPort->endTransmission();
-    // Serial.print("End transmion code (check i2c): "); Serial.println(end_trans);
+    //#if(DEBUG_FLAG)
+    //    Serial.print("End transmion code (check i2c): "); Serial.println(end_trans);
+    //#endif
     if (end_trans == 0) {
         return true;
+    }
+    else if (end_trans == 4) {
+    #if(DEBUG_FLAG)
+        Serial.println("Restarting i2c from end transmission error of 4");
+    #endif
+        _i2cPort->end();
+        _i2cPort->begin();
     }
     return false;
 }
