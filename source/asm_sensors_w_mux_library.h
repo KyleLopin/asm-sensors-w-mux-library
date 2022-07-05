@@ -42,27 +42,28 @@
 #define AS7265X_CODE 0x41
 
 // Enums and constants
-enum SENSOR : byte {
+enum SensorType : byte {
 	NO_SENSOR, AS7262_SENSOR, AS7263_SENSOR, AS7265X_SENSOR
 };
 
 class SpectroDesktop {
 public:
 	SpectroDesktop();
-	QwiicButton button;  // this will represent EVERY button ;) so its not an array
+	QwiicButton button;  // this will represent EVERY button so its not an array
 	AS726X as726x;  // treat all as726x the same
 	AS7265X as7265x;  // treat all as7265x the same
 	bool begin(TwoWire &wirePort = Wire);
+	void pollButtons();
 
 private:
 	TwoWire *_i2cPort;
 	bool use_mux = false;  // flag if there is a mux or not
-	byte sensor_type[8];
-	byte get_sensor_type(byte channel);
+	SensorType sensor_type_array[8] {NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR};
+	SensorType getSensorType(byte channel);
 	bool enableMuxPort(byte portNumber);
 	byte getMuxSettings();
 	bool sendMuxSettings(byte _settings);
-	bool check_i2c_addr(byte _addr);
+	bool checkI2cAddress(byte _addr);
 };
 
 #endif

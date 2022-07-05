@@ -9,8 +9,8 @@ void setup() {
     //Wire.setTimeout(3000);
     Serial.println("ASM spectral sensor Desktop Example 1: Polling Buttons"); 
     delay(500);
-    bool sensor = spectro.begin();
-    if (sensor == true) {
+    bool SensorType = spectro.begin();
+    if (SensorType == true) {
         Serial.println("Sensor connected");
     }
 
