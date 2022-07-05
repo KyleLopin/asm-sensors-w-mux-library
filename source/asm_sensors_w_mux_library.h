@@ -36,6 +36,7 @@
 #define MUX_ADDR	0x70
 #define AS726X_ADDR 0x49
 #define BUTTON_ADDR 0x6F
+// SENSOR TYPE
 #define AS7262_CODE 0x3E
 #define AS7263_CODE 0x3F
 #define AS7265X_CODE 0x41
@@ -57,10 +58,8 @@ private:
 	TwoWire *_i2cPort;
 	bool use_mux = false;  // flag if there is a mux or not
 	byte sensor_type[8];
-	bool get_sensor_info();
 	byte get_sensor_type(byte channel);
 	bool enableMuxPort(byte portNumber);
-	bool enableMuxPort_depr(byte portNumber);
 	byte getMuxSettings();
 	bool sendMuxSettings(byte _settings);
 	bool check_i2c_addr(byte _addr);
