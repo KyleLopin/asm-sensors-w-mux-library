@@ -44,7 +44,7 @@
 #define FIRST_CAL_REGISTER	0x14
 // Project constants
 const int MAX_CHANNEL_VALUE = 65000;
-const int DEFAULT_BULB_ENABLE = 0x06;
+const int DEFAULT_BULB_ENABLE = 0x07;
 
 // Enums and constants
 enum SensorType : byte {
@@ -72,6 +72,7 @@ private:
 	SensorType getSensorType(byte channel);
 	void getAS7262Data();
 	void getAS7263Data();
+	void getAS7265xData();
 	bool enableMuxPort(byte portNumber);
 	byte getMuxSettings();
 	bool sendMuxSettings(byte _settings);

@@ -105,6 +105,10 @@ void SpectroDesktop::pollButtons() {
                         Serial.println("running AS7263 Sensor");
                         readAS7263(i);
                     }
+                    else if (sensor_type_array[i] == AS7265X_SENSOR) {
+                        Serial.println("running AS7265x Sensor");
+                        readAS7265x(i);
+                    }
                     button.LEDoff();
                 }
             }
@@ -167,11 +171,53 @@ void SpectroDesktop::getAS7263Data() {
 }
 
 void SpectroDesktop::readAS7265x(byte portNumber) {
-    /* Read an AS7263 (the mux must be connected correctly before calling this)
-    no return, the data will be print to the serial port.  Different than AS7262 because
-    the AS726x public methods will now allow it */
-    as726x.takeMeasurementsWithBulb();  // AS7262 and AS7263 have same method here
-    getAS7263Data();
+    /* Read an AS7265x (the mux must be connected correctly before calling this)
+    no return, the data will be print to the serial port.*/
+    if (enableBulbsArray[portNumber] & 0x01) {
+        as7265x.enableBulb(AS7265x_LED_WHITE);
+    }
+    if (enableBulbsArray[portNumber] & 0x02) {
+        as7265x.enableBulb(AS7265x_LED_UV);
+    }
+    if (enableBulbsArray[portNumber] & 0x04) {
+        as7265x.enableBulb(AS7265x_LED_IR);
+    }
+    as7265x.takeMeasurements();  
+    if (enableBulbsArray[portNumber] & 0x01) {
+        as7265x.disableBulb(AS7265x_LED_WHITE);
+    }
+    if (enableBulbsArray[portNumber] & 0x02) {
+        as7265x.disableBulb(AS7265x_LED_UV);
+    }
+    if (enableBulbsArray[portNumber] & 0x04) {
+        as7265x.disableBulb(AS7265x_LED_IR);
+    }
+    getAS7265xData();
+}
+
+void SpectroDesktop::getAS7265xData() {
+    Serial.print("AS7265x Data: ");
+
+    Serial.print(as7265x.getCalibratedA()); Serial.print(", ");  // 410 nm 
+    Serial.print(as7265x.getCalibratedB()); Serial.print(", ");  // 435 nm
+    Serial.print(as7265x.getCalibratedC()); Serial.print(", ");  // 460 nm
+    Serial.print(as7265x.getCalibratedD()); Serial.print(", ");  // 485 nm
+    Serial.print(as7265x.getCalibratedE()); Serial.print(", ");  // 510 nm
+    Serial.print(as7265x.getCalibratedF()); Serial.print(", ");  // 535 nm
+
+    Serial.print(as7265x.getCalibratedG()); Serial.print(", ");  // 565 nm
+    Serial.print(as7265x.getCalibratedH()); Serial.print(", ");  // 585 nm
+    Serial.print(as7265x.getCalibratedR()); Serial.print(", ");  // 610 nm
+    Serial.print(as7265x.getCalibratedI()); Serial.print(", ");  // 645 nm
+    Serial.print(as7265x.getCalibratedS()); Serial.print(", ");  // 680 nm
+    Serial.print(as7265x.getCalibratedJ()); Serial.print(", ");  // 705 nm
+
+    Serial.print(as7265x.getCalibratedT()); Serial.print(", ");  // 730 nm
+    Serial.print(as7265x.getCalibratedU()); Serial.print(", ");  // 760 nm
+    Serial.print(as7265x.getCalibratedV()); Serial.print(", ");  // 810 nm
+    Serial.print(as7265x.getCalibratedW()); Serial.print(", ");  // 860 nm
+    Serial.print(as7265x.getCalibratedK()); Serial.print(", ");  // 900 nm
+    Serial.println(as7265x.getCalibratedL());  // 940 nm
 }
 
 SensorType SpectroDesktop::getSensorType(byte channel) {
