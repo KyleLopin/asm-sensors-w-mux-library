@@ -42,6 +42,9 @@
 #define AS7265X_CODE 0x41
 // Sensor register infor
 #define FIRST_CAL_REGISTER	0x14
+// Project constants
+const int MAX_CHANNEL_VALUE = 65000;
+const int DEFAULT_BULB_ENABLE = 0x06;
 
 // Enums and constants
 enum SensorType : byte {
@@ -54,10 +57,13 @@ public:
 	QwiicButton button;  // this will represent EVERY button so its not an array
 	AS726X as726x;  // treat all as726x the same
 	AS7265X as7265x;  // treat all as7265x the same
+	byte enableBulbsArray[8] {DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, 
+	                          DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE};
 	bool begin(TwoWire &wirePort = Wire);
 	void pollButtons();
-	void readAS7262();
-	void readAS7263();
+	void readAS7262(byte portNumber);
+	void readAS7263(byte portNumber);
+	void readAS7265x(byte portNumber);
 
 private:
 	TwoWire *_i2cPort;

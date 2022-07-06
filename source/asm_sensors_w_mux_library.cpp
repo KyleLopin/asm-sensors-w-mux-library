@@ -80,7 +80,7 @@ bool SpectroDesktop::begin(TwoWire &wirePort) {
 
 void SpectroDesktop::pollButtons() {
     // go thru each port on the i2c mux, if no mux, sensor_type will be NO_SENSOR for 1-7 anyways
-    Serial.println("Pololing Buttons");
+    // Serial.println("Polling Buttons");
     for (byte i = 0; i <= 7; i++) {  
         //Serial.print("i: "); Serial.println(i);
         //Serial.print("Sensor type: "); Serial.println(sensor_type_array[i]);
@@ -90,7 +90,7 @@ void SpectroDesktop::pollButtons() {
             //Serial.print("Mux settings: "); Serial.println(settings);
             //Serial.print("sensor on port "); Serial.println(button.isConnected());
             if (button.isConnected() == true) {
-                Serial.println("Has button");
+                // Serial.println("Has button");
                 if (button.hasBeenClicked()) {
                     button.LEDon(50);
                     button.clearEventBits();
@@ -99,11 +99,11 @@ void SpectroDesktop::pollButtons() {
                     #endif
                     if (sensor_type_array[i] == AS7262_SENSOR) {
                         Serial.println("running AS7262 Sensor");
-                        readAS7262();
+                        readAS7262(i);
                     }
                     else if (sensor_type_array[i] == AS7263_SENSOR) {
                         Serial.println("running AS7263 Sensor");
-                        readAS7263();
+                        readAS7263(i);
                     }
                     button.LEDoff();
                 }
@@ -112,11 +112,18 @@ void SpectroDesktop::pollButtons() {
     }
 }
 
-void SpectroDesktop::readAS7262() {
+void SpectroDesktop::readAS7262(byte portNumber) {
     /* Read an AS7262 (the mux must be connected correctly before calling this)
     no return, the data will be print to the serial port.  Different than AS7263 because
     the AS726x public methods will now allow it */
-    as726x.takeMeasurementsWithBulb();
+    bool useBulb = enableBulbsArray[portNumber] & 0x01;
+    if (useBulb) {
+        as726x.enableBulb();
+    }
+    as726x.takeMeasurements();
+    if (useBulb) {
+        as726x.disableBulb();
+    }
     getAS7262Data();
 }
 
@@ -132,12 +139,19 @@ void SpectroDesktop::getAS7262Data() {
     Serial.println(as726x.getCalibratedRed(), 4);
 }
 
-void SpectroDesktop::readAS7263() {
+void SpectroDesktop::readAS7263(byte portNumber) {
     /* Read an AS7263 (the mux must be connected correctly before calling this)
     no return, the data will be print to the serial port.  Different than AS7262 because
     the AS726x public methods will now allow it */
-    as726x.takeMeasurementsWithBulb();  // AS7262 and AS7263 have same method here
+    bool useBulb = enableBulbsArray[portNumber] & 0x01;
+    if (useBulb) {
+        as726x.enableBulb();
+    }
+    as726x.takeMeasurements();  // AS7262 and AS7263 have same method here
     getAS7263Data();
+    if (useBulb) {
+        as726x.disableBulb();
+    }
 }
 
 void SpectroDesktop::getAS7263Data() {
@@ -150,6 +164,14 @@ void SpectroDesktop::getAS7263Data() {
     Serial.print(as726x.getCalibratedU(), 4); Serial.print(", ");
     Serial.print(as726x.getCalibratedV(), 4); Serial.print(", ");
     Serial.println(as726x.getCalibratedW(), 4);
+}
+
+void SpectroDesktop::readAS7265x(byte portNumber) {
+    /* Read an AS7263 (the mux must be connected correctly before calling this)
+    no return, the data will be print to the serial port.  Different than AS7262 because
+    the AS726x public methods will now allow it */
+    as726x.takeMeasurementsWithBulb();  // AS7262 and AS7263 have same method here
+    getAS7263Data();
 }
 
 SensorType SpectroDesktop::getSensorType(byte channel) {
