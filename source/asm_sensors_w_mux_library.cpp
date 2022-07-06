@@ -79,13 +79,77 @@ bool SpectroDesktop::begin(TwoWire &wirePort) {
 }
 
 void SpectroDesktop::pollButtons() {
-    if (use_mux == true) {
-        for (byte i = 0; i <= 7; i++) {  // go thru each port on the i2c mux
-            if (sensor_type_array[i] != NO_SENSOR) {
-
+    // go thru each port on the i2c mux, if no mux, sensor_type will be NO_SENSOR for 1-7 anyways
+    Serial.println("Pololing Buttons");
+    for (byte i = 0; i <= 7; i++) {  
+        //Serial.print("i: "); Serial.println(i);
+        //Serial.print("Sensor type: "); Serial.println(sensor_type_array[i]);
+        enableMuxPort(i);
+        if (sensor_type_array[i] != NO_SENSOR) {  // check if a sensor was initialized there
+            byte settings = getMuxSettings();
+            //Serial.print("Mux settings: "); Serial.println(settings);
+            //Serial.print("sensor on port "); Serial.println(button.isConnected());
+            if (button.isConnected() == true) {
+                Serial.println("Has button");
+                if (button.hasBeenClicked()) {
+                    button.LEDon(50);
+                    button.clearEventBits();
+                    #if(DEBUG_FLAG==2)
+                        Serial.print("Button clicked on port: "); Serial.println(i);
+                    #endif
+                    if (sensor_type_array[i] == AS7262_SENSOR) {
+                        Serial.println("running AS7262 Sensor");
+                        readAS7262();
+                    }
+                    else if (sensor_type_array[i] == AS7263_SENSOR) {
+                        Serial.println("running AS7263 Sensor");
+                        readAS7263();
+                    }
+                    button.LEDoff();
+                }
             }
         }
     }
+}
+
+void SpectroDesktop::readAS7262() {
+    /* Read an AS7262 (the mux must be connected correctly before calling this)
+    no return, the data will be print to the serial port.  Different than AS7263 because
+    the AS726x public methods will now allow it */
+    as726x.takeMeasurementsWithBulb();
+    getAS7262Data();
+}
+
+void SpectroDesktop::getAS7262Data() {
+    /* Get the AS7262 data (public names of as726x library is different between as7262 and as7263
+    prints the data to the serial port*/
+    Serial.print("AS7262 Data: ");
+    Serial.print(as726x.getCalibratedViolet(), 4); Serial.print(", ");
+    Serial.print(as726x.getCalibratedBlue(), 4); Serial.print(", ");
+    Serial.print(as726x.getCalibratedGreen(), 4); Serial.print(", ");
+    Serial.print(as726x.getCalibratedYellow(), 4); Serial.print(", ");
+    Serial.print(as726x.getCalibratedOrange(), 4); Serial.print(", ");
+    Serial.println(as726x.getCalibratedRed(), 4);
+}
+
+void SpectroDesktop::readAS7263() {
+    /* Read an AS7263 (the mux must be connected correctly before calling this)
+    no return, the data will be print to the serial port.  Different than AS7262 because
+    the AS726x public methods will now allow it */
+    as726x.takeMeasurementsWithBulb();  // AS7262 and AS7263 have same method here
+    getAS7263Data();
+}
+
+void SpectroDesktop::getAS7263Data() {
+    /* Get the AS7262 data (public names of as726x library is different between as7262 and as7263
+    prints the data to the serial port*/
+    Serial.print("AS7263 Data: ");
+    Serial.print(as726x.getCalibratedR(), 4); Serial.print(", ");
+    Serial.print(as726x.getCalibratedS(), 4); Serial.print(", ");
+    Serial.print(as726x.getCalibratedT(), 4); Serial.print(", ");
+    Serial.print(as726x.getCalibratedU(), 4); Serial.print(", ");
+    Serial.print(as726x.getCalibratedV(), 4); Serial.print(", ");
+    Serial.println(as726x.getCalibratedW(), 4);
 }
 
 SensorType SpectroDesktop::getSensorType(byte channel) {
@@ -132,6 +196,7 @@ SensorType SpectroDesktop::getSensorType(byte channel) {
         Serial.print(channel); Serial.print("|  ");
     }  // else SensorType is already set to no sensor
     //  Now check if a button is also attached
+    Serial.println(button.isConnected());
     if (button.isConnected() == false) {
         Serial.println("No button attached to device.");
     }

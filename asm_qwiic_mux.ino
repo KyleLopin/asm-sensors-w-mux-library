@@ -11,13 +11,12 @@ void setup() {
     delay(500);
     bool SensorType = spectro.begin();
     if (SensorType == true) {
-        Serial.println("Sensor connected");
+        Serial.println("Sensor connected 2");
     }
 
 }
 
 void loop() {
-    //Serial.println("loop");
-    delay(500);
-
+    Serial.println("Loop");
+    spectro.pollButtons();
 }

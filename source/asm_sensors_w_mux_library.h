@@ -40,6 +40,8 @@
 #define AS7262_CODE 0x3E
 #define AS7263_CODE 0x3F
 #define AS7265X_CODE 0x41
+// Sensor register infor
+#define FIRST_CAL_REGISTER	0x14
 
 // Enums and constants
 enum SensorType : byte {
@@ -54,12 +56,16 @@ public:
 	AS7265X as7265x;  // treat all as7265x the same
 	bool begin(TwoWire &wirePort = Wire);
 	void pollButtons();
+	void readAS7262();
+	void readAS7263();
 
 private:
 	TwoWire *_i2cPort;
 	bool use_mux = false;  // flag if there is a mux or not
 	SensorType sensor_type_array[8] {NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR};
 	SensorType getSensorType(byte channel);
+	void getAS7262Data();
+	void getAS7263Data();
 	bool enableMuxPort(byte portNumber);
 	byte getMuxSettings();
 	bool sendMuxSettings(byte _settings);
