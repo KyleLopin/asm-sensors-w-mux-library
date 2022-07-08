@@ -287,7 +287,6 @@ void SpectroDesktop::turnIndicatorOn(byte portNumber) {
     }
     enableMuxPort(portNumber);
     if (button.isConnected()) {
-        Serial.println("button connected");
         button.LEDon(BUTTON_LED_LIGHT_LEVEL);
     }
     if (sensorTypeArray[portNumber] == AS7265X_SENSOR) {
@@ -354,6 +353,8 @@ byte SpectroDesktop::getMuxSettings() {
     _i2cPort->requestFrom(MUX_ADDR, 1);
     if (!_i2cPort->available()) {  // Make sure the mux will respond
         Serial.println("Mux not sending settings");
+        _i2cPort->end();
+        _i2cPort->begin();
         return 254;
     }
     // get current settings
