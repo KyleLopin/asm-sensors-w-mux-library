@@ -45,6 +45,7 @@
 // Project constants
 const int MAX_CHANNEL_VALUE = 65000;
 const int DEFAULT_BULB_ENABLE = 0x07;
+const int BUTTON_LED_LIGHT_LEVEL = 25;
 
 // Enums and constants
 enum SensorType : byte {
@@ -64,11 +65,13 @@ public:
 	void readAS7262(byte portNumber);
 	void readAS7263(byte portNumber);
 	void readAS7265x(byte portNumber);
+	void turnIndicatorOn(byte portNumber);
+	void turnIndicatorOff(byte portNumber);
 
 private:
 	TwoWire *_i2cPort;
 	bool use_mux = false;  // flag if there is a mux or not
-	SensorType sensor_type_array[8] {NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR};
+	SensorType sensorTypeArray[8] {NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR};
 	SensorType getSensorType(byte channel);
 	void getAS7262Data();
 	void getAS7263Data();

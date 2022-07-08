@@ -59,7 +59,7 @@ bool SpectroDesktop::begin(TwoWire &wirePort) {
             Serial.print("Port: "); Serial.print(i);
             Serial.print(" available: "); Serial.println(avail);
             if (avail) {  // get what type of sensor is on the port AS7262 / AS7263 / or AS7265X
-                sensor_type_array[i] = getSensorType(i);
+                sensorTypeArray[i] = getSensorType(i);
                 found_device = true;
             }
         }
@@ -68,7 +68,7 @@ bool SpectroDesktop::begin(TwoWire &wirePort) {
         Serial.println("No mux");
         int avail = checkI2cAddress(AS726X_ADDR);
         if (avail) {
-            sensor_type_array[0] = getSensorType(0);  // just put in a place holder for the channel
+            sensorTypeArray[0] = getSensorType(0);  // just put in a place holder for the channel
             found_device = true;
         }
     }
@@ -83,29 +83,29 @@ void SpectroDesktop::pollButtons() {
     // Serial.println("Polling Buttons");
     for (byte i = 0; i <= 7; i++) {  
         //Serial.print("i: "); Serial.println(i);
-        //Serial.print("Sensor type: "); Serial.println(sensor_type_array[i]);
+        //Serial.print("Sensor type: "); Serial.println(sensorTypeArray[i]);
         enableMuxPort(i);
-        if (sensor_type_array[i] != NO_SENSOR) {  // check if a sensor was initialized there
+        if (sensorTypeArray[i] != NO_SENSOR) {  // check if a sensor was initialized there
             byte settings = getMuxSettings();
             //Serial.print("Mux settings: "); Serial.println(settings);
             //Serial.print("sensor on port "); Serial.println(button.isConnected());
             if (button.isConnected() == true) {
                 // Serial.println("Has button");
                 if (button.hasBeenClicked()) {
-                    button.LEDon(50);
+                    button.LEDon(BUTTON_LED_LIGHT_LEVEL);
                     button.clearEventBits();
                     #if(DEBUG_FLAG==2)
                         Serial.print("Button clicked on port: "); Serial.println(i);
                     #endif
-                    if (sensor_type_array[i] == AS7262_SENSOR) {
+                    if (sensorTypeArray[i] == AS7262_SENSOR) {
                         Serial.println("running AS7262 Sensor");
                         readAS7262(i);
                     }
-                    else if (sensor_type_array[i] == AS7263_SENSOR) {
+                    else if (sensorTypeArray[i] == AS7263_SENSOR) {
                         Serial.println("running AS7263 Sensor");
                         readAS7263(i);
                     }
-                    else if (sensor_type_array[i] == AS7265X_SENSOR) {
+                    else if (sensorTypeArray[i] == AS7265X_SENSOR) {
                         Serial.println("running AS7265x Sensor");
                         readAS7265x(i);
                     }
@@ -278,6 +278,45 @@ SensorType SpectroDesktop::getSensorType(byte channel) {
         #endif
     }
     return _sensor_type;
+}
+
+void SpectroDesktop::turnIndicatorOn(byte portNumber) {
+    if (portNumber > 8) {  // Check for a correct port number
+        Serial.println("enableMuxPort: port Number has to be 7 or less");
+        return;
+    }
+    enableMuxPort(portNumber);
+    if (button.isConnected()) {
+        Serial.println("button connected");
+        button.LEDon(BUTTON_LED_LIGHT_LEVEL);
+    }
+    if (sensorTypeArray[portNumber] == AS7265X_SENSOR) {
+        as7265x.enableIndicator();
+    }
+    else if (sensorTypeArray[portNumber] == AS7262_SENSOR ||
+        sensorTypeArray[portNumber] == AS7263_SENSOR) {
+        as726x.enableIndicator();
+    }
+    Serial.print("Indicator turned on:"); Serial.println(portNumber);
+}
+
+void SpectroDesktop::turnIndicatorOff(byte portNumber) {
+    if (portNumber > 8) {  // Check for a correct port number
+        Serial.println("enableMuxPort: port Number has to be 7 or less");
+        return;
+    }
+    enableMuxPort(portNumber);
+    if (button.isConnected()) {
+        button.LEDoff();
+    }
+    if (sensorTypeArray[portNumber] == AS7265X_SENSOR) {
+        as7265x.disableIndicator();  
+    }
+    else if (sensorTypeArray[portNumber] == AS7262_SENSOR || 
+        sensorTypeArray[portNumber] == AS7263_SENSOR) {
+        as726x.disableIndicator();
+    }
+    Serial.print("Indicator turned off:"); Serial.println(portNumber);
 }
 
 bool SpectroDesktop::enableMuxPort(byte portNumber) {
