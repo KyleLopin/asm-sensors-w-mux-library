@@ -60,6 +60,8 @@ public:
 	AS7265X as7265x;  // treat all as7265x the same
 	byte enableBulbsArray[8] {DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, 
 	                          DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE};
+	byte integration_times[8] {0, 0, 0, 0, 0, 0, 0, 0};
+	byte led_currents[8]{ 0b00, 0b00, 0b00, 0b00, 0b00, 0b00, 0b00, 0b00 };
 	bool begin(TwoWire &wirePort = Wire);
 	void pollButtons();
 	void readAS7262(byte portNumber);

@@ -97,6 +97,11 @@ void SpectroDesktop::pollButtons() {
                     #if(DEBUG_FLAG==2)
                         Serial.print("Button clicked on port: "); Serial.println(i);
                     #endif
+                    // Print out the setup data
+                    Serial.println("Starting Data Read");
+                    Serial.print("Reading port: "); Serial.println(i);
+                    Serial.print("Integration time: "); Serial.println(integration_times[i]);
+                    Serial.println("LED current: 0");
                     if (sensorTypeArray[i] == AS7262_SENSOR) {
                         Serial.println("running AS7262 Sensor");
                         readAS7262(i);
@@ -110,6 +115,7 @@ void SpectroDesktop::pollButtons() {
                         readAS7265x(i);
                     }
                     button.LEDoff();
+                    Serial.println("End Data Read");
                 }
             }
         }
@@ -238,16 +244,17 @@ SensorType SpectroDesktop::getSensorType(byte channel) {
     #if(DEBUG_FLAG)
         Serial.print("Hardware type: 0x"); Serial.println(hw_type, HEX);
     #endif
+    integration_times[channel] = 200;
     if (hw_type == AS7262_CODE) {
         _sensor_type = AS7262_SENSOR;
-        as726x.setIntegrationTime(150);
+        as726x.setIntegrationTime(200);
         as726x.setMeasurementMode(0b11);  // read all channels
         Serial.print("AS7262 device attached to port: ");
         Serial.print(channel); Serial.print("|  ");
     }
     else if (hw_type == AS7263_CODE) {
         _sensor_type = AS7263_SENSOR;
-        as726x.setIntegrationTime(150);
+        as726x.setIntegrationTime(200);
         as726x.setMeasurementMode(0b11);  // read all channels
         Serial.print("AS7263 device attached to port: ");
         Serial.print(channel); Serial.print("|  ");
@@ -259,7 +266,8 @@ SensorType SpectroDesktop::getSensorType(byte channel) {
         as7265x.setBulbCurrent(AS7265X_LED_CURRENT_LIMIT_12_5MA, AS7265x_LED_IR);
         as7265x.setBulbCurrent(AS7265X_LED_CURRENT_LIMIT_12_5MA, AS7265x_LED_UV);
         as7265x.disableIndicator();
-        as7265x.setIntegrationCycles(150);
+        as7265x.setIntegrationCycles(200);
+        as7265x.setMeasurementMode(0b11);  // read all channels
         Serial.print("AS7265x device attached to port: ");
         Serial.print(channel); Serial.print("|  ");
     }  // else SensorType is already set to no sensor
