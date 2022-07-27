@@ -48,10 +48,15 @@ bool SpectroDesktop::begin(TwoWire &wirePort) {
     #if(DEBUG_FLAG)
         Serial.println("Checking for a mux");
     #endif
-    bool found_device = false;  // initialize to false, then set to true if a sensor is found
-    use_mux = checkI2cAddress(MUX_ADDR);  // set boolean if the device has a i2c mux or not
+    bool foundDevice = false;  // initialize to false, then set to true if a sensor is found
+    byte muxCheckTimes = 0;
+    do {
+        useMux = checkI2cAddress(MUX_ADDR);  // set boolean if the device has a i2c mux or not
+        muxCheckTimes += 1;
+        Serial.print("Checking for mux times: "); Serial.println(muxCheckTimes);
+    } while (!useMux && muxCheckTimes <= MAX_TIMES_CHECK_FOR_MUX);
     
-    if (use_mux) {
+    if (useMux) {
         Serial.println("Have mux");
         for (byte i = 0; i <= 7; i++) {  // go thru each port on the i2c mux
             enableMuxPort(i);
@@ -60,7 +65,7 @@ bool SpectroDesktop::begin(TwoWire &wirePort) {
             Serial.print(" available: "); Serial.println(avail);
             if (avail) {  // get what type of sensor is on the port AS7262 / AS7263 / or AS7265X
                 sensorTypeArray[i] = getSensorType(i);
-                found_device = true;
+                foundDevice = true;
             }
         }
     }
@@ -69,13 +74,13 @@ bool SpectroDesktop::begin(TwoWire &wirePort) {
         int avail = checkI2cAddress(AS726X_ADDR);
         if (avail) {
             sensorTypeArray[0] = getSensorType(0);  // just put in a place holder for the channel
-            found_device = true;
+            foundDevice = true;
         }
     }
     #if(DEBUG_FLAG)
         Serial.println("End Setup");
     #endif
-    return (found_device);
+    return (foundDevice);
 }
 
 void SpectroDesktop::pollButtons() {
@@ -97,23 +102,9 @@ void SpectroDesktop::pollButtons() {
                     #if(DEBUG_FLAG==2)
                         Serial.print("Button clicked on port: "); Serial.println(i);
                     #endif
-                    // Print out the setup data
-                    Serial.println("Starting Data Read");
-                    Serial.print("Reading port: "); Serial.println(i);
-                    Serial.print("Integration time: "); Serial.println(integration_times[i]);
-                    Serial.println("LED current: 0");
-                    if (sensorTypeArray[i] == AS7262_SENSOR) {
-                        Serial.println("running AS7262 Sensor");
-                        readAS7262(i);
-                    }
-                    else if (sensorTypeArray[i] == AS7263_SENSOR) {
-                        Serial.println("running AS7263 Sensor");
-                        readAS7263(i);
-                    }
-                    else if (sensorTypeArray[i] == AS7265X_SENSOR) {
-                        Serial.println("running AS7265x Sensor");
-                        readAS7265x(i);
-                    }
+
+                    readSensor(i);
+
                     button.LEDoff();
                     Serial.println("End Data Read");
                 }
@@ -122,10 +113,53 @@ void SpectroDesktop::pollButtons() {
     }
 }
 
+void SpectroDesktop::readSensor(byte portNumber) {
+    /* Read the sensor on portNumber, check if there is a sensor on portNumber,
+    get what type of sensor there is and then read it*/
+    if (portNumber > 8) {  // Check for a correct port number
+        Serial.println("enableMuxPort: port Number has to be 7 or less");
+        return;
+    }
+
+    if (sensorTypeArray[portNumber] == NO_SENSOR) {
+        Serial.print("No sensor on port: ");Serial.println(portNumber);
+        return;
+    }
+
+    enableMuxPort(portNumber);
+    bool hasButton = button.isConnected();
+    if (hasButton == true) {
+        button.LEDon(BUTTON_LED_LIGHT_LEVEL);
+    }
+
+    // Print out the setup data
+    Serial.println("Starting Data Read");
+    Serial.print("Reading port: "); Serial.println(portNumber);
+    Serial.print("Integration time: "); Serial.println(integrationTimes[portNumber]);
+    Serial.print("LED current: "); Serial.println(ledCurrents[portNumber]);
+
+    if (sensorTypeArray[portNumber] == AS7262_SENSOR) {
+        Serial.println("running AS7262 Sensor");
+        readAS7262(portNumber);
+    }
+    else if (sensorTypeArray[portNumber] == AS7263_SENSOR) {
+        Serial.println("running AS7263 Sensor");
+        readAS7263(portNumber);
+    }
+    else if (sensorTypeArray[portNumber] == AS7265X_SENSOR) {
+        Serial.println("running AS7265x Sensor");
+        readAS7265x(portNumber);
+    }
+    if (hasButton == true) {
+        button.LEDoff();
+    }
+}
+
 void SpectroDesktop::readAS7262(byte portNumber) {
     /* Read an AS7262 (the mux must be connected correctly before calling this)
     no return, the data will be print to the serial port.  Different than AS7263 because
-    the AS726x public methods will now allow it */
+    the AS726x public methods will now allow it, ie AS7262 uses getCalibratedViolet(), 
+    while the AS7263 uses getCalibratedR() */
     bool useBulb = enableBulbsArray[portNumber] & 0x01;
     if (useBulb) {
         as726x.enableBulb();
@@ -244,7 +278,7 @@ SensorType SpectroDesktop::getSensorType(byte channel) {
     #if(DEBUG_FLAG)
         Serial.print("Hardware type: 0x"); Serial.println(hw_type, HEX);
     #endif
-    integration_times[channel] = 200;
+    integrationTimes[channel] = 200;
     if (hw_type == AS7262_CODE) {
         _sensor_type = AS7262_SENSOR;
         as726x.setIntegrationTime(200);
@@ -288,7 +322,7 @@ SensorType SpectroDesktop::getSensorType(byte channel) {
     return _sensor_type;
 }
 
-void SpectroDesktop::turnIndicatorOn(byte portNumber) {
+void SpectroDesktop::turnButtonOn(byte portNumber) {
     if (portNumber > 8) {  // Check for a correct port number
         Serial.println("enableMuxPort: port Number has to be 7 or less");
         return;
@@ -297,6 +331,25 @@ void SpectroDesktop::turnIndicatorOn(byte portNumber) {
     if (button.isConnected()) {
         button.LEDon(BUTTON_LED_LIGHT_LEVEL);
     }
+}
+
+void SpectroDesktop::turnButtonOff(byte portNumber) {
+    if (portNumber > 8) {  // Check for a correct port number
+        Serial.println("enableMuxPort: port Number has to be 7 or less");
+        return;
+    }
+    enableMuxPort(portNumber);
+    if (button.isConnected()) {
+        button.LEDoff();
+    }
+}
+
+void SpectroDesktop::turnIndicatorOn(byte portNumber) {
+    if (portNumber > 8) {  // Check for a correct port number
+        Serial.println("enableMuxPort: port Number has to be 7 or less");
+        return;
+    }
+    enableMuxPort(portNumber);
     if (sensorTypeArray[portNumber] == AS7265X_SENSOR) {
         as7265x.enableIndicator();
     }
@@ -313,9 +366,6 @@ void SpectroDesktop::turnIndicatorOff(byte portNumber) {
         return;
     }
     enableMuxPort(portNumber);
-    if (button.isConnected()) {
-        button.LEDoff();
-    }
     if (sensorTypeArray[portNumber] == AS7265X_SENSOR) {
         as7265x.disableIndicator();  
     }

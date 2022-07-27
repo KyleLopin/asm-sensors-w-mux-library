@@ -43,8 +43,14 @@
 // Sensor register infor
 #define FIRST_CAL_REGISTER	0x14
 // Project constants
-const int MAX_CHANNEL_VALUE = 65000;
-const int DEFAULT_BULB_ENABLE = 0x07;
+const int MAX_CHANNEL_VALUE = 65000;  // Is this still used?
+// sometimes the mux does not respond correctly so check it a few times, times needed: 9,9
+const int MAX_TIMES_CHECK_FOR_MUX = 20;
+// The 3 LSB set if the bulb should be turned on, so 0x01 turns on the AS7262/7263 LED
+// but the AS7265X has 3 bulbs so 0x01 turn on white LED, 0x02 turns on IR LED and 0x04 turns on UV LED
+// AND the bits to get multiple LEDs on the AS7265x to turn on
+const int DEFAULT_BULB_ENABLE = 0x07;  
+// Level of light to turn the button LED on
 const int BUTTON_LED_LIGHT_LEVEL = 25;
 
 // Enums and constants
@@ -60,19 +66,22 @@ public:
 	AS7265X as7265x;  // treat all as7265x the same
 	byte enableBulbsArray[8] {DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, 
 	                          DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE};
-	byte integration_times[8] {0, 0, 0, 0, 0, 0, 0, 0};
-	byte led_currents[8]{ 0b00, 0b00, 0b00, 0b00, 0b00, 0b00, 0b00, 0b00 };
+	byte integrationTimes[8] {0, 0, 0, 0, 0, 0, 0, 0};
+	byte ledCurrents[8]{ 0b00, 0b00, 0b00, 0b00, 0b00, 0b00, 0b00, 0b00 };
 	bool begin(TwoWire &wirePort = Wire);
 	void pollButtons();
+	void readSensor(byte portNumber);
 	void readAS7262(byte portNumber);
 	void readAS7263(byte portNumber);
 	void readAS7265x(byte portNumber);
+	void turnButtonOn(byte portNumber);
+	void turnButtonOff(byte portNumber);
 	void turnIndicatorOn(byte portNumber);
 	void turnIndicatorOff(byte portNumber);
 
 private:
 	TwoWire *_i2cPort;
-	bool use_mux = false;  // flag if there is a mux or not
+	bool useMux = false;  // flag if there is a mux or not
 	SensorType sensorTypeArray[8] {NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR};
 	SensorType getSensorType(byte channel);
 	void getAS7262Data();
