@@ -64,8 +64,7 @@ public:
 	QwiicButton button;  // this will represent EVERY button so its not an array
 	AS726X as726x;  // treat all as726x the same
 	AS7265X as7265x;  // treat all as7265x the same
-	byte enableBulbsArray[8] {DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, 
-	                          DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE};
+	
 	byte integrationTimes[8] {0, 0, 0, 0, 0, 0, 0, 0};
 	byte ledCurrents[8]{ 0b00, 0b00, 0b00, 0b00, 0b00, 0b00, 0b00, 0b00 };
 	bool begin(TwoWire &wirePort = Wire);
@@ -74,6 +73,9 @@ public:
 	void readAS7262(byte portNumber);
 	void readAS7263(byte portNumber);
 	void readAS7265x(byte portNumber);
+	void setEnableBulb(byte portNumber, byte newSetting);
+	void setBulbCurrent(byte portNumber, byte newSetting);
+	void setIntTime(byte portNumber, byte newSetting);
 	void turnButtonOn(byte portNumber);
 	void turnButtonOff(byte portNumber);
 	void turnIndicatorOn(byte portNumber);
@@ -83,6 +85,8 @@ private:
 	TwoWire *_i2cPort;
 	bool useMux = false;  // flag if there is a mux or not
 	SensorType sensorTypeArray[8] {NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR, NO_SENSOR};
+	byte enableBulbsArray[8]{ DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE,
+							  DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE, DEFAULT_BULB_ENABLE };
 	SensorType getSensorType(byte channel);
 	void getAS7262Data();
 	void getAS7263Data();

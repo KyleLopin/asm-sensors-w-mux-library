@@ -97,7 +97,7 @@ void SpectroDesktop::pollButtons() {
             if (button.isConnected() == true) {
                 // Serial.println("Has button");
                 if (button.hasBeenClicked()) {
-                    button.LEDon(BUTTON_LED_LIGHT_LEVEL);
+                    //button.LEDon(BUTTON_LED_LIGHT_LEVEL);
                     button.clearEventBits();
                     #if(DEBUG_FLAG==2)
                         Serial.print("Button clicked on port: "); Serial.println(i);
@@ -105,8 +105,8 @@ void SpectroDesktop::pollButtons() {
 
                     readSensor(i);
 
-                    button.LEDoff();
-                    Serial.println("End Data Read");
+                    //button.LEDoff();
+                    //Serial.println("End Data Read");
                 }
             }
         }
@@ -153,6 +153,8 @@ void SpectroDesktop::readSensor(byte portNumber) {
     if (hasButton == true) {
         button.LEDoff();
     }
+    Serial.println("End Data Read");
+
 }
 
 void SpectroDesktop::readAS7262(byte portNumber) {
@@ -258,6 +260,14 @@ void SpectroDesktop::getAS7265xData() {
     Serial.print(as7265x.getCalibratedW()); Serial.print(", ");  // 860 nm
     Serial.print(as7265x.getCalibratedK()); Serial.print(", ");  // 900 nm
     Serial.println(as7265x.getCalibratedL());  // 940 nm
+}
+
+void SpectroDesktop::setEnableBulb(byte portNumber, byte newSetting) {
+    if (portNumber > 8) {  // Check for a correct port number
+        Serial.println("setEnableBulb: port Number has to be 7 or less");
+        return;
+    }
+    enableBulbsArray[portNumber] = newSetting;
 }
 
 SensorType SpectroDesktop::getSensorType(byte channel) {
